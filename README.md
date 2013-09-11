@@ -1,4 +1,4 @@
-dodos
-=====
+Dodos — Escaping from Extinction
+================================
 
-Web Game: Dodos — Escaping from Extinction
+A WebGame created to the http://js13kgames.com
