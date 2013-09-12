@@ -1,3 +1,5 @@
+/* * * Helpers * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 function makeEl(tagName, conf) {
     var el = document.createElement(tagName);
     for ( att in conf ) {
@@ -10,10 +12,38 @@ function makeEl(tagName, conf) {
     return el;
 }
 
+function setCookie(name, value, expireDays) {
+    var expire = new Date();
+    expire.setDate( expire.getDate() + (expireDays||365) );
+    value = escape(value) + '; expires='+expire.toUTCString();
+    document.cookie = name +'='+ value;
+}
+
+function getCookie(name) {
+    var data = document.cookie.split(/;\s+/);
+    for (var item,i=0; item=data[i]; i++) {
+        item = item.split('=');
+        if ( item[0] == name ) return unescape(item[1]);
+    }
+    return false;
+}
+
+/* * * Globals * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 var dodos = [],
-    totDodos = 30,
-    selectedDodo = null,
-    things = [],
+    totDodos,
+    selectedDodo,
+    things,
+    gameInterval,
+    dodoTarget,
+    killedDodos,
+    savedDodos,
+    minimalDodosToSave,
+    scoreboard,
+    currentLevel,
+    currentLevelNum,
+    startTime,
+    elapsedTime,
     rand = Math.random,
     abs = Math.abs,
     sqrt = Math.sqrt,
@@ -30,9 +60,16 @@ area.onclick = function(ev) {
         dodoTarget.style.top = selectedDodo.target.y +'px';
     }
 };
-var dodoTarget = makeEl('m', { parent:area, html:'<x></x><x></x>' });
+
+/* * * Game * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+(window.onresize = function() {
+    var areaTopMargin = ( window.innerHeight - area.h ) / 2;
+    if ( areaTopMargin > 0 ) area.style.top = areaTopMargin+'px';
+})();
 
 function createThing(type, x, y, w, h) {
+    console.log('createThing', type, x, y, w, h);
     var t;
     things.push(
         t = makeEl(type, {
@@ -44,28 +81,6 @@ function createThing(type, x, y, w, h) {
     t.type = type; t.x = x; t.y = y; t.w = w; t.h = h;
     if (type=='exit') t.innerHTML = '<e></e><e></e>'
 }
-
-// Add water:
-//makeEl('w', { style:'left:200px; top:-13px; width:300px; height:200px', parent:area });
-createThing('water', 200, 0, 300, 160);
-
-// Add light:
-for ( var i=0; i<200; i++ ) {
-    s = 10 + Math.random()*8;
-    makeEl('l', {
-        style: 'width:'+s+'px; height:'+s+'px; opacity:'+(0.1+rand()/5)+';'+
-               'left:'+Math.round(rand()*area.w)+'px; top:'+Math.round(rand()*area.h)+'px;',
-        parent: area
-    });
-}
-
-// Add hole:
-//makeEl('h', { style:'left:300px; top:300px; width:300px; height:213px', parent:area });
-createThing('hole', 300, 340, 300, 200);
-
-// Add exit:
-//makeEl('exit', { style:'left:750px; top:120px', html:'<e></e><e></e>', parent:area });
-createThing('exit', 700, 150, 120, 120);
 
 function removeDodoSelection() {
     if ( selectedDodo ) {
@@ -105,17 +120,6 @@ function nearCollectiveMiddleFor(dodo) {
     else return { x:x/tot, y:y/tot };
 }
 
-/*function distToNearestDodoFor(dodo) {
-    var minD=Infinity, n=0, nearest=null;
-    for (var d,i=0; d=dodos[i]; i++) {
-        if ( d!=dodo && (n=sqrt(pow(dodo.x-d.x) + pow(dodo.y-d.y))) < minD ) {
-            minD = n;
-            //nearest = d;
-        }
-    }
-    return minD;
-}*/
-
 function calcDist(p1, p2) {
     return sqrt( pow(p2.x-p1.x) + pow(p2.y-p1.y) );
 }
@@ -128,14 +132,97 @@ function dodoColisionFor(dodo) {
     }
 }
 
-function killDodo(dodo) {
+function removeDodoFromCollective(dodo) {
     if ( dodo == selectedDodo ) removeDodoSelection();
     var newList = [];
     for (var d,i=0; d=dodos[i]; i++) {
         if ( d != dodo ) newList.push(d);
     }
     dodos = newList;
-    setTimeout(function(){ dodo.parentNode.removeChild(dodo) }, 3000);
+    dodo.onclick = function(){ };
+    setTimeout(function(){ if(dodo.parentNode) dodo.parentNode.removeChild(dodo) }, 3000);
+}
+
+function updateScoreboard() {
+    scoreboard.innerHTML =
+        'Saved: '+savedDodos+' <small>('+minimalDodosToSave+'+)</small>'+
+        ' &nbsp; Killed: '+killedDodos+' <small>(of '+totDodos+')</small>'+
+        ' &nbsp; Time: '+(currentLevel.time-elapsedTime)+'sec';
+}
+
+function killDodo(dodo) {
+    killedDodos++;
+    removeDodoFromCollective(dodo);
+    if ( dodos.length == 0 ) {
+        clearInterval(gameInterval);
+        prompt(
+            '<h1>This Dodos fail<br><big>☹</big></h1>'+
+            '<p>You left all your dodos to the death without honor.</p>'+
+            getRecords(),
+            function(){ init(true) }
+        )
+    }
+}
+
+function saveDodo(dodo) {
+    savedDodos++;
+    removeDodoFromCollective(dodo);
+    dodo.className = 'saved';
+    if ( dodos.length == 0 ) {
+        clearInterval(gameInterval);
+        if ( savedDodos >= minimalDodosToSave ) {
+            finishLevel();
+            prompt(
+                '<h1>This Dodos was Saved!<br><big>😄</big></h1>'+
+                '<p>They are happy now in Sto\'Vo\'Kor.</p>'+
+                getRecords(),
+                function(){ init(true) }
+            )
+        } else {
+            prompt(
+                '<h1>This Dodos fail<br><big>☹</big></h1>'+
+                '<p>You left many of your dodos to the death without honor.</p>'+
+                getRecords(),
+                function(){ init(true) }
+            )
+        }
+    }
+}
+
+function getRecords() {
+    var lastLevel = getCookie('lastFinishedLevel');
+    if (lastLevel) {
+        var html = 'Best moments:';
+        lastLevel = parseInt(lastLevel);
+        for (var i=0; i<=lastLevel; i++) {
+            var level = JSON.parse(getCookie('level'+i));
+            html += '<li>Level '+(i+1)+': Saved:'+level.saved+
+                    ' Killed:'+level.killed+' Time:'+level.time+'sec</li>'
+        }
+        return html;
+    } else {
+        return '';
+    }
+}
+
+function finishLevel() {
+    if ( currentLevelNum >= 0 ) {
+        console.log('finish level',currentLevelNum);
+        setCookie('lastFinishedLevel', currentLevelNum);
+        lastRec = getCookie('level'+currentLevelNum);
+        if (lastRec) lastRec = JSON.parse(lastRec);
+        if ( !lastRec || lastRec.saved<savedDodos ||
+             (lastRec.saved==savedDodos && lastRec.time>elapsedTime)
+           ) {
+            setCookie('level'+currentLevelNum,
+                JSON.stringify({
+                    saved: savedDodos,
+                    killed: killedDodos,
+                    time: elapsedTime
+                })
+            );
+        }
+    }
 }
 
 thingAct = {
@@ -148,7 +235,9 @@ thingAct = {
         dodo.className = 'fallen';
     },
     exit: function(thing, dodo) {
-        dodo.target = { x:thing.x+thing.w/2, y:thing.y+thing.h/2 };
+        var exitMid = { x:thing.x+thing.w/2, y:thing.y+thing.h/2 };
+        dodo.target = exitMid;
+        if ( calcDist(dodo, exitMid) < 8 ) saveDodo(dodo);
     }
 };
 
@@ -163,8 +252,13 @@ function detectSenaryThingsFor(dodo) {
 
 function vect1(v, inc) {
     if (!inc) inc = 1;
-    h = sqrt( pow(v.x) + pow(v.y) );
-    return { x:v.x*inc/h, y:v.y*inc/h };
+    var pSum = pow(v.x) + pow(v.y);
+    if ( pSum == 0 ) {
+        return { x:1, y:0 };
+    } else {
+        h = sqrt(pSum);
+        return { x:v.x*inc/h, y:v.y*inc/h };
+    }
 }
 
 function act(dodo) {
@@ -208,22 +302,182 @@ function act(dodo) {
     s.transform = s.MozTransform = s.WebkitTransform = 'rotate('+dodo.angle+'deg)';
 }
 
-for ( var i=0; i<totDodos; i++ ) {
-    setTimeout(function(){
-        var d;
-        dodos.push(
-            d = makeEl('p', {
-                html: '<b><u></u><i></i><i></i></b>',
-                style: 'left:-99px',
-                parent: area
-            })
-        );
-        d.onclick = dodoClicked;
-        d.x = -50;
-        d.y = 250;
-        d.inertia = { x:2, y:rand()-0.5 }
-        d.angle = 0;
-    }, i*(900));
+function init(skipIntro) {
+    if ( gameInterval ) clearInterval(gameInterval);
+    killedDodos = savedDodos = 0;
+    while (area.firstChild) area.removeChild(area.firstChild);
+    dodoTarget = makeEl('m', { parent:area, html:'<x></x><x></x>' });
+    scoreboard = makeEl('div', { 'class':'scoreboard', html:'Starting...', parent:area });
+    if (skipIntro) {
+        introBtOk();
+    } else {
+        var intro = getEl('intro');
+        area.appendChild(intro);
+        intro.style.display = 'block';
+        getEl('introBt').focus();
+    }
 }
 
-setInterval(function(){ for (var dodo,i=0; dodo=dodos[i]; i++) act(dodo) }, 50);
+function introBtOk() {
+    var intro = getEl('intro');
+    intro.style.display = 'none';
+    document.body.appendChild(intro);
+    levelSelector();
+}
+
+var levels = [
+    {
+        name: 'Starting the journey',
+        time: 120,
+        desc: 'Oh! Will be so easy to come to Sto\'Vo\'Kor!',
+        conf: '20,10,-50,300|water,200,-10,300,100|hole,600,350,90,90|exit,650,100,120'
+    },
+    {
+        name: 'Holy F*** Water',
+        time: 90,
+        desc: 'I wish I could swim in my next life.',
+        conf: '15,7,-50,450|water,-10,-10,330,330|water,230,450,150,200|water,450,270,400,300|water,420,-10,400,150|exit,700,165,80'
+    },
+    {
+        name: 'Holes',
+        desc: 'Watch your step...',
+        time: 60,
+        conf: '20,7,-50,250'+
+            '|hole,60,30,60,60|hole,160,-100,250,300|hole,500,170,120,120|hole,650,15,40,40|hole,720,30,50,50'+
+            '|hole,70,400,60,60|hole,180,350,100,300|hole,310,300,170,150|hole,350,480,200,60|hole,510,320,80,80|hole,630,370,60,60|hole,600,470,120,60|hole,750,400,150,150'+
+            '|exit,660,250,100'
+    }
+];
+function levelSelector() {
+    var lastLevel = getCookie('lastFinishedLevel');
+    lastLevel = lastLevel? parseInt(lastLevel) : -1;
+    currentLevelNum = lastLevel+1;
+    currentLevel = levels[currentLevelNum];
+    if ( currentLevel ) {
+        initGame( currentLevelNum+1, currentLevel );
+    } else {
+        prompt(
+            '<h1>Congratulations!<br>You finish the journey</h1>'+
+            '<p>Now the dodos are free from earth\'s violence and they will live a peaceful existence in Sto\'Vo\'Kor. Your name will be remembered by this successes and some day <u>they will come back</u> to take you to their paradise.</p>',
+            function() {
+                setCookie('lastFinishedLevel', -1);
+                init();
+            },
+            'Restart the Game'
+        );
+    }
+}
+
+function prompt(html, callback, btLabel) {
+    if (!btLabel) btLabel = 'Ok!'
+    var promptWin = makeEl('div', { 'class':'info', html:html, parent:area });
+    var btArea = makeEl('p', { 'class':'bts', parent:promptWin });
+    var bt = makeEl('button', {html:btLabel, parent:btArea});
+    bt.onclick = function() {
+        promptWin.parentNode.removeChild(promptWin);
+        callback();
+    };
+    bt.focus();
+}
+
+function initGame(levelNum, levelData) {
+    var thing, i, j, conf = levelData.conf.split('|');
+    selectedDodo = null;
+    elapsedTime = 0;
+    var start = conf.shift().split(',');
+    totDodos = parseInt(start[0]);
+    minimalDodosToSave = parseInt(start[1]);
+    start = { x:parseInt(start[2]), y:parseInt(start[3]) };
+    updateScoreboard();
+    console.log('Start:', totDodos, start);
+    things = [];
+    for ( i=0; thing=conf[i]; i++ ) {
+        thing = thing.split(',');
+        for ( j=1; j<5; j++ ) thing[j] = parseInt(thing[j]);
+        conf[i] = thing;
+    }
+    // Add water:
+    for ( i=0; thing=conf[i]; i++ ) {
+        if ( thing[0] == 'water' ) createThing.apply(this, thing);
+    }
+    // Add light:
+    for ( var i=0; i<200; i++ ) {
+        s = 10 + Math.random()*8;
+        makeEl('l', {
+            style: 'width:'+s+'px; height:'+s+'px; opacity:'+(0.1+rand()/5)+';'+
+                   'left:'+Math.round(rand()*area.w)+'px; top:'+Math.round(rand()*area.h)+'px;',
+            parent: area
+        });
+    }
+    // Add hole:
+    for ( i=0; thing=conf[i]; i++ ) {
+        if ( thing[0] == 'hole' ) createThing.apply(this, thing);
+    }
+    // Add exit:
+    for ( i=0; thing=conf[i]; i++ ) {
+        if ( thing[0] == 'exit' ) {
+            thing[4] = thing[3];
+            createThing.apply(this, thing);
+        }
+    }
+    // Create Dodos:
+    for ( var i=0; i<totDodos; i++ ) {
+        setTimeout(function(){
+            var d;
+            dodos.push(
+                d = makeEl('d', {
+                    html: '<h><v></v><i></i><i></i></h>',
+                    style: 'left:-99px',
+                    parent: area
+                })
+            );
+            d.onclick = dodoClicked;
+            d.x = start.x;
+            d.y = start.y;
+            d.inertia = { x:2, y:rand()-0.5 }
+            d.angle = 0;
+        }, i*(900));
+    }
+    prompt(
+        '<h1>Level '+levelNum+'<br>'+levelData.name+'</h1>'+
+        '<p>'+levelData.desc+'</p>'+
+        '<p>There are '+totDodos+' dodos and you must save at least '+
+        minimalDodosToSave+' in '+levelData.time+' seconds.</p>',
+        function() {
+            startTime = new Date();
+            gameInterval = setInterval(gameTic, 50);
+        }
+    );
+}
+
+var lastTic;
+function gameTic() {
+    var now = new Date();
+    if ( (now-lastTic) > 100 ) {
+        water = document.getElementsByTagName('water');
+        for (var wEl,i=0; wEl=water[i]; i++) wEl.className = 'noAnim';
+    }
+    lastTic = now;
+    elapsedTime = Math.round( (now - startTime) / 1000 );
+    if ( (currentLevel.time-elapsedTime) == 0 ) {
+        clearInterval(gameInterval);
+        if ( savedDodos >= minimalDodosToSave ) {
+            finishLevel();
+            prompt(
+                '<h1>This Dodos was Saved!<br><big>😄</big></h1>'+
+                '<p>They are happy now in Sto\'Vo\'Kor.</p>'+
+                getRecords(),
+                function(){ init(true) }
+            )
+        } else {
+            prompt(
+                '<h1>Time over<br><big>☹</big></h1>'+
+                '<p>You must be faster to save this dodos.</p>'+
+                getRecords(),
+                function(){ init(true) }
+            )
+        }
+    }
+    for (var dodo,i=0; dodo=dodos[i]; i++) act(dodo);
+    updateScoreboard();
+}
