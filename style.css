@@ -40,6 +40,7 @@ body {
   color: #FFF;
   font-family: Liberation Sans, Arial, sans-serif;
   font-size: 16px;
+  line-height: 19px;
 }
 
 .info {
@@ -61,6 +62,7 @@ body {
 
 .info h1 {
   font-size: 22px;
+  line-height: 26px;
   text-align: center;
   margin: 5px 0px;
 }

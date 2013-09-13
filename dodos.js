@@ -147,7 +147,7 @@ function updateScoreboard() {
     scoreboard.innerHTML =
         'Saved: '+savedDodos+' <small>('+minimalDodosToSave+'+)</small>'+
         ' &nbsp; Killed: '+killedDodos+' <small>(of '+totDodos+')</small>'+
-        ' &nbsp; Time: '+(currentLevel.time-elapsedTime)+'sec';
+        ' &nbsp; Time left: '+(currentLevel.time-elapsedTime)+'sec';
 }
 
 function killDodo(dodo) {
@@ -349,22 +349,35 @@ var levels = [
     }
 ];
 function levelSelector() {
-    var lastLevel = getCookie('lastFinishedLevel');
-    lastLevel = lastLevel? parseInt(lastLevel) : -1;
-    currentLevelNum = lastLevel+1;
-    currentLevel = levels[currentLevelNum];
-    if ( currentLevel ) {
-        initGame( currentLevelNum+1, currentLevel );
+    if ( document.location.search ) {
+        var data = document.location.search.substr(1).split('&');
+        currentLevelNum = -1;
+        currentLevel = { name:'Unnamed', desc:'', time: 60, conf:'' };
+        for ( var item,i=0; item=data[i]; i++ ) {
+            item = item.split('=');
+            if(item[0]=='level') item[0] = 'conf';
+            currentLevel[item[0]] = unescape(item[1]);
+        }
+        console.log('User def level:',currentLevel)
+        initGame(0, currentLevel);
     } else {
-        prompt(
-            '<h1>Congratulations!<br>You finish the journey</h1>'+
-            '<p>Now the dodos are free from earth\'s violence and they will live a peaceful existence in Sto\'Vo\'Kor. Your name will be remembered by this successes and some day <u>they will come back</u> to take you to their paradise.</p>',
-            function() {
-                setCookie('lastFinishedLevel', -1);
-                init();
-            },
-            'Restart the Game'
-        );
+        var lastLevel = getCookie('lastFinishedLevel');
+        lastLevel = lastLevel? parseInt(lastLevel) : -1;
+        currentLevelNum = lastLevel+1;
+        currentLevel = levels[currentLevelNum];
+        if ( currentLevel ) {
+            initGame( currentLevelNum+1, currentLevel );
+        } else {
+            prompt(
+                '<h1>Congratulations!<br>You finish the journey</h1>'+
+                '<p>Now the dodos are free from earth\'s violence and they will live a peaceful existence in Sto\'Vo\'Kor. Your name will be remembered by this successes and some day <u>they will come back</u> to take you to their paradise.</p>',
+                function() {
+                    setCookie('lastFinishedLevel', -1);
+                    init();
+                },
+                'Restart the Game'
+            );
+        }
     }
 }
 
@@ -438,8 +451,12 @@ function initGame(levelNum, levelData) {
             d.angle = 0;
         }, i*(900));
     }
+    var title = '';
+    if ( !levelNum || levelNum<1 ) title = 'User Level';
+    else title = 'Level '+levelNum;
+    if ( levelData.name ) title += '<br>'+ levelData.name;
     prompt(
-        '<h1>Level '+levelNum+'<br>'+levelData.name+'</h1>'+
+        '<h1>'+title+'</h1>'+
         '<p>'+levelData.desc+'</p>'+
         '<p>There are '+totDodos+' dodos and you must save at least '+
         minimalDodosToSave+' in '+levelData.time+' seconds.</p>',
