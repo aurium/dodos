@@ -1,3 +1,4 @@
+(function(exports){
 /* * * Helpers * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 function makeEl(tagName, conf) {
@@ -48,6 +49,8 @@ var dodos = [],
     abs = Math.abs,
     sqrt = Math.sqrt,
     pow = function(n,p){ return Math.pow(n,p||2) },
+    dodoSound = new Audio('dodo.ogg'),
+    coinSound = new Audio('coin.ogg'),
     getEl = function(id){ return document.getElementById(id) };
 
 var area = getEl('area');
@@ -55,6 +58,7 @@ area.w = 800;
 area.h = 500;
 area.onclick = function(ev) {
     if (selectedDodo) {
+        dodoSound.play();
         selectedDodo.target = { x:ev.pageX-area.offsetLeft, y:ev.pageY-area.offsetTop };
         dodoTarget.style.left = selectedDodo.target.x +'px';
         dodoTarget.style.top = selectedDodo.target.y +'px';
@@ -91,6 +95,7 @@ function removeDodoSelection() {
 }
 
 function dodoClicked(ev) {
+    dodoSound.play();
     removeDodoSelection();
     ev.stopPropagation();
     dodoTarget.style.left = '-99px';
@@ -165,6 +170,7 @@ function killDodo(dodo) {
 }
 
 function saveDodo(dodo) {
+    coinSound.play();
     savedDodos++;
     removeDodoFromCollective(dodo);
     dodo.className = 'saved';
@@ -302,7 +308,7 @@ function act(dodo) {
     s.transform = s.MozTransform = s.WebkitTransform = 'rotate('+dodo.angle+'deg)';
 }
 
-function init(skipIntro) {
+exports.init = function init(skipIntro) {
     if ( gameInterval ) clearInterval(gameInterval);
     killedDodos = savedDodos = 0;
     while (area.firstChild) area.removeChild(area.firstChild);
@@ -318,7 +324,7 @@ function init(skipIntro) {
     }
 }
 
-function introBtOk() {
+exports.introBtOk = function introBtOk() {
     var intro = getEl('intro');
     intro.style.display = 'none';
     document.body.appendChild(intro);
@@ -336,7 +342,7 @@ var levels = [
         name: 'Holy F*** Water',
         time: 90,
         desc: 'I wish I could swim in my next life.',
-        conf: '15,7,-50,450|water,-10,-10,330,330|water,230,450,150,200|water,450,270,400,300|water,420,-10,400,150|exit,700,165,80'
+        conf: '15,7,-50,450|water,-10,-10,330,330|water,230,450,150,200|water,450,300,400,250|water,420,-10,400,150|exit,680,170,100'
     },
     {
         name: 'Holes',
@@ -498,3 +504,4 @@ function gameTic() {
     for (var dodo,i=0; dodo=dodos[i]; i++) act(dodo);
     updateScoreboard();
 }
+})(this);

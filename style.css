@@ -1,33 +1,44 @@
-@-webkit-keyframes dodo-head {
-  from { right: -8px }
-  to { right: -3px }
-}
-
-@keyframes dodo-head {
-  from { right: -8px }
-  to { right: -3px }
-}
-
-@-webkit-keyframes waves {
-  from { background-position: 0px 0px }
-  to { background-position: 0px 30px }
-}
+@keyframes dodo-head         { from { right: -8px } to { right: -3px } }
+@-o-keyframes dodo-head      { from { right: -8px } to { right: -3px } }
+@-moz-keyframes dodo-head    { from { right: -8px } to { right: -3px } }
+@-webkit-keyframes dodo-head { from { right: -8px } to { right: -3px } }
 
 @keyframes waves {
   from { background-position: 0px 0px }
   to { background-position: 0px 30px }
 }
-
-@-webkit-keyframes exit {
-  0% { -webkit-transform: scale(1); opacity: 0 }
-  30% { -webkit-transform: scale(0.9); opacity: 1 }
-  100% { -webkit-transform: scale(0); opacity: 0.5 }
+@-o-keyframes waves {
+  from { background-position: 0px 0px }
+  to { background-position: 0px 30px }
+}
+@-moz-keyframes waves {
+  from { background-position: 0px 0px }
+  to { background-position: 0px 30px }
+}
+@-webkit-keyframes waves {
+  from { background-position: 0px 0px }
+  to { background-position: 0px 30px }
 }
 
 @keyframes exit {
   0% { transform: scale(1); opacity: 0 }
   30% { transform: scale(0.9); opacity: 1 }
   100% { transform: scale(0); opacity: 0.5 }
+}
+@-o-keyframes exit {
+  0% { -o-transform: scale(1); opacity: 0 }
+  30% { -o-transform: scale(0.9); opacity: 1 }
+  100% { -o-transform: scale(0); opacity: 0.5 }
+}
+@-moz-keyframes exit {
+  0% { -moz-transform: scale(1); opacity: 0 }
+  30% { -moz-transform: scale(0.9); opacity: 1 }
+  100% { -moz-transform: scale(0); opacity: 0.5 }
+}
+@-webkit-keyframes exit {
+  0% { -webkit-transform: scale(1); opacity: 0 }
+  30% { -webkit-transform: scale(0.9); opacity: 1 }
+  100% { -webkit-transform: scale(0); opacity: 0.5 }
 }
 
 * {
@@ -88,7 +99,6 @@ body {
   top: 285px;
   transform: rotate(135deg);
   -o-transform: rotate(135deg);
-  -ms-transform: rotate(135deg);
   -moz-transform: rotate(135deg);
   -webkit-transform: rotate(135deg);
 }
@@ -100,7 +110,6 @@ body {
   top: -30px;
   transform: rotate(200deg);
   -o-transform: rotate(200deg);
-  -ms-transform: rotate(200deg);
   -moz-transform: rotate(200deg);
   -webkit-transform: rotate(200deg);   
 }
@@ -179,13 +188,14 @@ d.drowned, d.fallen, d.saved {
   opacity: 0;
   transition: 3s;
   -o-transition: 3s;
-  -ms-transition: 3s;
   -moz-transition: 3s;
   -webkit-transition: 3s;
 }
 
 d.drowned h, d.fallen h, d.saved h { /* Dodo's head */
   animation: dodo-head 0.4s linear 0s infinite alternate;
+  -o-animation: dodo-head 0.4s linear 0s infinite alternate;
+  -moz-animation: dodo-head 0.4s linear 0s infinite alternate;
   -webkit-animation: dodo-head 0.4s linear 0s infinite alternate;
 }
 
@@ -232,10 +242,14 @@ water { /* Water */
   background-size: 75px 30px;
   box-shadow: inset 0 0 45px rgba(150,220,255,0.8),  inset 0 0 50px rgba(0,200,255,0.8), 15px 15px 30px rgba(50,230,50,0.3);
   animation: waves 3s linear 0s infinite normal;
+  -o-animation: waves 3s linear 0s infinite normal;
+  -moz-animation: waves 3s linear 0s infinite normal;
   -webkit-animation: waves 3s linear 0s infinite normal;
 }
 water.noAnim {
   animation: none;
+  -o-animation: none;
+  -moz-animation: none;
   -webkit-animation: none;
 }
 
@@ -249,9 +263,6 @@ hole { /* Hole */
 
 exit { /* Level Target */
   position: absolute;
-  Xwidth: 120px;
-  Xheight: 120px;
-  Xmargin: -60px 0 0 -60px;
 }
 
 e { /* Exit hole */
@@ -263,11 +274,15 @@ e { /* Exit hole */
   border-radius: 50%;
   background: radial-gradient(circle, rgba(50,150,0,0) 40%, #FF8 100%);
   animation: exit 2s ease-out 0s infinite normal;
+  -o-animation: exit 2s ease-out 0s infinite normal;
+  -moz-animation: exit 2s ease-out 0s infinite normal;
   -webkit-animation: exit 2s ease-out 0s infinite normal;
 }
 
 e:last-child {
   animation: exit 2s ease-out 1s infinite normal;
+  -o-animation: exit 2s ease-out 1s infinite normal;
+  -moz-animation: exit 2s ease-out 1s infinite normal;
   -webkit-animation: exit 2s ease-out 1s infinite normal;
 }
 
@@ -277,6 +292,8 @@ m { /* mouse click -- Dodo target */
   height: 50px;
   margin: -25px 0 0 -25px;
   transform: rotate(45deg);
+  -o-transform: rotate(45deg);
+  -moz-transform: rotate(45deg);
   -webkit-transform: rotate(45deg);
   left: -99px;
   z-index: 10;
@@ -292,6 +309,8 @@ x { /* mouse X */
 }
 
 x:last-child {
+  transform: rotate(90deg);
+  -o-transform: rotate(90deg);
   -moz-transform: rotate(90deg);
   -webkit-transform: rotate(90deg);
 }
