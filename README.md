@@ -3,13 +3,13 @@ Dodos — Escaping from Extinction
 
 A WebGame created to the http://js13kgames.com
 
-You can try it now here: http://aurium.github.io/dodos
+You can try it now here: http://js13kgames.com/entries/dodos-escaping-from-extinction
 
 User defined Levels
 -------------------
 
 You can create new levels to play adding parameters to the page URL, like this:
-http://aurium.github.io/dodos?level=30,5,-50,100|water,500,-10,300,100|exit,650,350,120&name=Try%20it&time=600
+http://js13kgames.com/games/dodos-escaping-from-extinction/index.html?level=30,5,-50,100|water,500,-10,300,100|exit,650,350,120&name=Try%20it&time=600
 
 ### Level parameters
 
