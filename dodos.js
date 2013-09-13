@@ -305,7 +305,7 @@ function act(dodo) {
     s = dodo.style;
     s.left = dodo.x+'px';
     s.top  = dodo.y+'px';
-    s.transform = s.MozTransform = s.WebkitTransform = 'rotate('+dodo.angle+'deg)';
+    s.transform = s.OTransform = s.MozTransform = s.WebkitTransform = 'rotate('+dodo.angle+'deg)';
 }
 
 exports.init = function init(skipIntro) {
